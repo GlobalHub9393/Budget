@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1220" />
+  <title>Money Recovery — Separate Backend</title>
+  <style>
+    :root{
+      --bg:#07101d; --panel:#0d1929; --panel2:#122238; --line:#20344f;
+      --text:#f7fbff; --muted:#8fa6bf; --good:#48d597; --bad:#ff6b7a; --warn:#f7c65a;
+      --blue:#62a8ff; --shadow:0 14px 42px rgba(0,0,0,.25); --radius:18px;
+    }
+    *{box-sizing:border-box} html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    body{min-height:100vh;padding-bottom:92px;background:radial-gradient(circle at 85% -10%,rgba(68,134,255,.15),transparent 28%),var(--bg)}
+    button,input,select,textarea{font:inherit} button{cursor:pointer}
+    .hidden{display:none!important}.app{max-width:900px;margin:0 auto;padding:18px 16px 30px}
+    .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+    .brand{display:flex;align-items:center;gap:11px;font-weight:850;letter-spacing:-.02em}.logo{width:38px;height:38px;border-radius:13px;background:linear-gradient(145deg,#4d9cff,#6a5cff);display:grid;place-items:center;box-shadow:0 8px 24px rgba(83,122,255,.28);font-weight:900}.sub{font-size:12px;color:var(--muted);font-weight:650;margin-top:2px}
+    .iconbtn{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:13px;padding:10px 12px}
+    .viewrow{display:flex;gap:8px;overflow:auto;padding-bottom:4px;margin-bottom:16px}.chip{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:8px 13px;font-size:13px;font-weight:750;white-space:nowrap}.chip.active{background:#17345a;color:#fff;border-color:#2f6ca9}
+    .hero{background:linear-gradient(145deg,#102743,#0d1929);border:1px solid #22405f;border-radius:24px;padding:22px;box-shadow:var(--shadow);margin-bottom:14px}.eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:800}.money{font-size:46px;line-height:1.04;font-weight:900;letter-spacing:-.055em;margin:7px 0}.herofoot{display:flex;justify-content:space-between;gap:10px;align-items:end}.herofoot .mini{font-size:12px;color:var(--muted)}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px}.card .label{font-size:12px;color:var(--muted);font-weight:750}.card .value{font-size:24px;font-weight:850;margin-top:6px;letter-spacing:-.035em}.good{color:var(--good)!important}.bad{color:var(--bad)!important}.warn{color:var(--warn)!important}.muted{color:var(--muted)!important}
+    .section{margin-top:20px}.sectionhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.sectiontitle{font-size:17px;font-weight:850;letter-spacing:-.02em}.tinybtn{border:1px solid var(--line);background:var(--panel2);color:#dbeaff;border-radius:10px;padding:7px 10px;font-size:12px;font-weight:750}
+    .rows{border:1px solid var(--line);border-radius:17px;overflow:hidden;background:var(--panel)}.row{display:grid;grid-template-columns:74px 1fr auto auto;align-items:center;gap:9px;padding:13px 14px;border-bottom:1px solid rgba(55,81,112,.45)}.row:last-child{border-bottom:0}.date{font-size:12px;color:var(--muted);font-weight:700}.rlabel{font-weight:760;font-size:14px}.amount{font-weight:800;font-variant-numeric:tabular-nums;text-align:right}.running{width:82px;text-align:right;font-size:13px;font-weight:850;font-variant-numeric:tabular-nums}.negativeRow{background:linear-gradient(90deg,rgba(255,70,92,.11),transparent)}
+    .account{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;border-bottom:1px solid rgba(55,81,112,.45)}.account:last-child{border-bottom:0}.aname{font-weight:780}.atype{font-size:12px;color:var(--muted);margin-top:3px}.abalance{font-size:19px;font-weight:850}
+    .debt{padding:15px;border-bottom:1px solid rgba(55,81,112,.45)}.debt:last-child{border-bottom:0}.debtTop{display:flex;justify-content:space-between;gap:12px}.debtname{font-weight:800}.debtbal{font-size:18px;font-weight:850}.debtmeta{display:flex;gap:10px;flex-wrap:wrap;margin-top:7px;font-size:12px;color:var(--muted)}
+    .dangerbox{border:1px solid rgba(255,107,122,.4);background:rgba(255,107,122,.08);border-radius:16px;padding:14px;margin-top:12px}.dangerbox strong{color:#ff9aa5}
+    .empty{padding:30px;text-align:center;color:var(--muted)}
+    .fab{position:fixed;right:18px;bottom:88px;width:54px;height:54px;border:none;border-radius:17px;background:linear-gradient(145deg,#4d9cff,#675cff);color:#fff;font-size:27px;box-shadow:0 14px 36px rgba(49,94,255,.38);z-index:30}
+    .bottom{position:fixed;left:0;right:0;bottom:0;background:rgba(7,16,29,.92);backdrop-filter:blur(14px);border-top:1px solid var(--line);display:flex;justify-content:center;z-index:20;padding-bottom:env(safe-area-inset-bottom)}.nav{max-width:900px;width:100%;display:grid;grid-template-columns:repeat(5,1fr)}.navbtn{border:0;background:transparent;color:#7089a4;padding:11px 2px 9px;font-size:10px;font-weight:750}.navbtn span{display:block;font-size:20px;margin-bottom:3px}.navbtn.active{color:#8fc3ff}
+    .page{display:none}.page.active{display:block}
+    .modalback{position:fixed;inset:0;background:rgba(1,7,15,.76);backdrop-filter:blur(5px);display:flex;align-items:flex-end;justify-content:center;z-index:100}.modal{width:100%;max-width:620px;background:#0d1929;border:1px solid var(--line);border-radius:24px 24px 0 0;padding:20px;max-height:90vh;overflow:auto}.modalhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.modalhead h3{margin:0;font-size:20px}.close{background:transparent;border:0;color:var(--muted);font-size:26px}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:11px}.field{margin-bottom:12px}.field.full{grid-column:1/-1}.field label{display:block;font-size:12px;color:var(--muted);font-weight:750;margin:0 0 6px}.input{width:100%;background:#081422;border:1px solid #253d5a;color:#fff;border-radius:12px;padding:12px;outline:none}.input:focus{border-color:#5da7ff}.actions{display:flex;gap:10px;margin-top:6px}.primary{flex:1;border:0;border-radius:13px;padding:13px;background:#4d92ef;color:white;font-weight:850}.danger{border:1px solid rgba(255,107,122,.35);background:rgba(255,107,122,.08);color:#ff99a4;border-radius:13px;padding:13px;font-weight:800}
+    .authwrap{min-height:100vh;display:grid;place-items:center;padding:22px}.authcard{width:min(440px,100%);background:var(--panel);border:1px solid var(--line);border-radius:26px;padding:24px;box-shadow:var(--shadow)}.authlogo{width:52px;height:52px;border-radius:17px;background:linear-gradient(145deg,#4d9cff,#675cff);display:grid;place-items:center;font-size:25px;font-weight:900;margin-bottom:17px}.authcard h1{margin:0;font-size:28px;letter-spacing:-.04em}.authcard p{color:var(--muted);line-height:1.45}.tabs{display:grid;grid-template-columns:1fr 1fr;background:#081422;border-radius:12px;padding:4px;margin:16px 0}.tab{border:0;background:transparent;color:var(--muted);border-radius:9px;padding:9px;font-weight:800}.tab.active{background:#17345a;color:#fff}.authmsg{font-size:13px;color:var(--muted);margin-top:12px}.onboardChoice{border:1px solid var(--line);background:#0b1726;border-radius:16px;padding:16px;margin-top:10px}.onboardChoice h3{margin:0 0 5px}.onboardChoice p{margin:0 0 12px;font-size:13px}
+    .joincode{font-size:28px;letter-spacing:.16em;font-weight:900;padding:12px 0}.member{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(55,81,112,.45)}.member:last-child{border-bottom:0}.pill{font-size:11px;border:1px solid var(--line);border-radius:999px;padding:5px 8px;color:var(--muted)}
+    .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:100px;background:#152841;border:1px solid #315071;color:#fff;padding:10px 15px;border-radius:12px;font-size:13px;z-index:500;box-shadow:var(--shadow)}
+    @media(min-width:700px){.app{padding:26px}.grid{grid-template-columns:repeat(4,minmax(0,1fr))}.bottom{left:50%;transform:translateX(-50%);width:min(620px,100%);bottom:14px;border:1px solid var(--line);border-radius:18px;padding:0}.fab{right:calc(50% - 430px)}.modal{border-radius:24px;margin-bottom:24px}.modalback{align-items:center}.row{grid-template-columns:90px 1fr 110px 110px}}
+  </style>
+</head>
+<body>
+  <div id="authScreen" class="authwrap">
+    <div class="authcard">
+      <div class="authlogo">$</div>
+      <h1>Money Recovery</h1>
+      <p>Cash first. What’s coming in, what’s going out, and the exact day the balance breaks.</p>
+      <div class="tabs"><button id="signinTab" class="tab active">Sign In</button><button id="signupTab" class="tab">Create Account</button></div>
+      <div class="field"><label>Email</label><input id="authEmail" class="input" type="email" autocomplete="email"></div>
+      <div class="field"><label>Password</label><input id="authPassword" class="input" type="password" autocomplete="current-password"></div>
+      <button id="authSubmit" class="primary" style="width:100%">Sign In</button>
+      <div id="authMsg" class="authmsg"></div>
+    </div>
+  </div>
+
+  <div id="onboardScreen" class="authwrap hidden">
+    <div class="authcard">
+      <div class="authlogo">$</div>
+      <h1>Set up your money</h1>
+      <p>Start with the numbers we already built, create a blank household, or join someone else.</p>
+      <div class="onboardChoice">
+        <h3>Start with current numbers</h3><p>Loads the current cash, debt, and upcoming bills we already mapped.</p>
+        <button id="seedStart" class="primary" style="width:100%">Start Thomas Dashboard</button>
+      </div>
+      <div class="onboardChoice">
+        <h3>Start blank</h3><p>Best for Lara or a fresh setup.</p>
+        <input id="blankName" class="input" value="Lara" placeholder="Your name" style="margin-bottom:9px">
+        <button id="blankStart" class="tinybtn" style="width:100%;padding:12px">Create Blank Household</button>
+      </div>
+      <div class="onboardChoice">
+        <h3>Join household</h3><p>Use the private join code from the Household page.</p>
+        <div class="formgrid"><input id="joinName" class="input" placeholder="Your name"><input id="joinCode" class="input" placeholder="JOIN CODE"></div>
+        <button id="joinBtn" class="tinybtn" style="width:100%;padding:12px;margin-top:9px">Join</button>
+      </div>
+      <button id="onboardLogout" class="iconbtn" style="width:100%;margin-top:14px">Sign Out</button>
+      <div id="onboardMsg" class="authmsg"></div>
+    </div>
+  </div>
+
+  <div id="mainApp" class="hidden">
+    <div class="app">
+      <div class="topbar">
+        <div class="brand"><div class="logo">$</div><div><div>Money Recovery</div><div id="householdName" class="sub">Our Money</div></div></div>
+        <button id="refreshBtn" class="iconbtn">↻</button>
+      </div>
+      <div id="viewRow" class="viewrow"></div>
+
+      <section id="dashboard" class="page active">
+        <div class="hero">
+          <div class="eyebrow">Total cash right now</div>
+          <div id="heroCash" class="money">$0.00</div>
+          <div class="herofoot"><div><div class="mini">First negative day</div><div id="heroNegative" style="font-weight:850;margin-top:3px">—</div></div><div style="text-align:right"><div class="mini">Lowest projected</div><div id="heroLow" style="font-weight:850;margin-top:3px">—</div></div></div>
+        </div>
+        <div class="grid">
+          <div class="card"><div class="label">Coming In</div><div id="metricIn" class="value good">$0</div></div>
+          <div class="card"><div class="label">Going Out</div><div id="metricOut" class="value bad">$0</div></div>
+          <div class="card"><div class="label">Debt Balance</div><div id="metricDebt" class="value">$0</div></div>
+          <div class="card"><div class="label">Next 14 Days</div><div id="metric14" class="value">$0</div></div>
+        </div>
+        <div class="section"><div class="sectionhead"><div class="sectiontitle">Next moves</div><button class="tinybtn" data-page="cashflow">Full cash flow</button></div><div id="dashFlow" class="rows"></div></div>
+        <div id="dangerBox" class="dangerbox hidden"></div>
+      </section>
+
+      <section id="cashflow" class="page">
+        <div class="sectionhead"><div><div class="eyebrow">Running balance</div><div class="sectiontitle">What’s coming in vs. going out</div></div><button id="addFlow" class="tinybtn">+ Add</button></div>
+        <div id="cashSummary" class="grid" style="margin-bottom:12px"></div>
+        <div id="cashRows" class="rows"></div>
+        <div class="sub" style="margin:10px 4px 0">Watch items are tracked but never counted until you change their status.</div>
+      </section>
+
+      <section id="accounts" class="page">
+        <div class="sectionhead"><div class="sectiontitle">Accounts</div><button id="addAccount" class="tinybtn">+ Add</button></div>
+        <div id="accountRows" class="rows"></div>
+      </section>
+
+      <section id="debts" class="page">
+        <div class="sectionhead"><div class="sectiontitle">Debt</div><button id="addDebt" class="tinybtn">+ Add</button></div>
+        <div id="debtRows" class="rows"></div>
+      </section>
+
+      <section id="household" class="page">
+        <div class="sectionhead"><div class="sectiontitle">Household</div><button id="logoutBtn" class="tinybtn">Sign out</button></div>
+        <div class="card" style="margin-bottom:12px"><div class="label">Join code</div><div id="joinCodeDisplay" class="joincode">--------</div><div class="sub">Lara can create her own account and use this code. Private rows never load for another member.</div></div>
+        <div class="card"><div class="label" style="margin-bottom:8px">Members</div><div id="memberRows"></div></div>
+      </section>
+    </div>
+
+    <button id="fab" class="fab">+</button>
+    <div class="bottom"><div class="nav">
+      <button class="navbtn active" data-page="dashboard"><span>⌂</span>Home</button>
+      <button class="navbtn" data-page="cashflow"><span>↕</span>Cash Flow</button>
+      <button class="navbtn" data-page="accounts"><span>▣</span>Accounts</button>
+      <button class="navbtn" data-page="debts"><span>◫</span>Debt</button>
+      <button class="navbtn" data-page="household"><span>♡</span>Household</button>
+    </div></div>
+  </div>
+
+  <div id="modalBack" class="modalback hidden"><div class="modal"><div class="modalhead"><h3 id="modalTitle">Add</h3><button id="modalClose" class="close">×</button></div><div id="modalBody"></div></div></div>
+  <div id="toast" class="toast hidden"></div>
+
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+const SUPABASE_URL='https://ndyrjuzsxnhyadjdwepv.supabase.co';
+const SUPABASE_KEY='sb_publishable_vi42WDCGlRO6dAeKMYgEEg_tG0__JB2';
+const sb=createClient(SUPABASE_URL,SUPABASE_KEY);
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+let signupMode=false, session=null, household=null, members=[], accounts=[], debts=[], flows=[], view='mine', currentPage='dashboard';
+const money=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(n||0));
+const shortDate=d=>new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric'}).format(new Date(d+'T12:00:00'));
+const today=()=>new Date().toISOString().slice(0,10);
+function toast(msg){$('#toast').textContent=msg;$('#toast').classList.remove('hidden');setTimeout(()=>$('#toast').classList.add('hidden'),2400)}
+function errMsg(e){return e?.message||String(e||'Something went wrong')}
+function ownerName(uid){return members.find(m=>m.user_id===uid)?.display_name||'Member'}
+function visibleMine(row){return view==='household' ? row.visibility==='shared' : row.owner_user_id===session.user.id}
+
+async function init(){
+ const {data}=await sb.auth.getSession(); session=data.session;
+ if(!session){showAuth();return}
+ await resolveHousehold();
+}
+function showAuth(){session=null;$('#authScreen').classList.remove('hidden');$('#onboardScreen').classList.add('hidden');$('#mainApp').classList.add('hidden')}
+async function resolveHousehold(){
+ $('#authScreen').classList.add('hidden');
+ const {data,error}=await sb.rpc('money_current_household');
+ if(error){$('#authMsg').textContent=errMsg(error);showAuth();return}
+ if(!data){$('#onboardScreen').classList.remove('hidden');$('#mainApp').classList.add('hidden');return}
+ $('#onboardScreen').classList.add('hidden');$('#mainApp').classList.remove('hidden');await loadAll();
+}
+async function loadAll(){
+ const hhRes=await sb.from('money_households').select('*').single(); if(hhRes.error){toast(errMsg(hhRes.error));return} household=hhRes.data;
+ const [m,a,d,f]=await Promise.all([
+  sb.from('money_members').select('*').order('created_at'),
+  sb.from('money_accounts').select('*').order('sort_order').order('created_at'),
+  sb.from('money_debts').select('*').order('next_due_date',{ascending:true,nullsFirst:false}),
+  sb.from('money_cashflow').select('*').order('flow_date').order('created_at')
+ ]);
+ members=m.data||[];accounts=a.data||[];debts=d.data||[];flows=f.data||[];
+ $('#householdName').textContent=household.name;renderViews();renderAll();
+}
+function renderViews(){
+ const me=ownerName(session.user.id);$('#viewRow').innerHTML=`<button class="chip ${view==='mine'?'active':''}" data-view="mine">${me}</button><button class="chip ${view==='household'?'active':''}" data-view="household">Household</button>`;
+ $$('[data-view]').forEach(b=>b.onclick=()=>{view=b.dataset.view;renderViews();renderAll()});
+}
+function getCurrentCash(){return accounts.filter(a=>a.included_in_cash&&visibleMine(a)).reduce((s,a)=>s+Number(a.balance),0)}
+function projectedRows(){
+ const start=getCurrentCash(); let running=start;
+ const usable=flows.filter(f=>visibleMine(f)&&['planned','pending'].includes(f.status)&&f.flow_date>=today()).sort((a,b)=>a.flow_date.localeCompare(b.flow_date)||a.created_at.localeCompare(b.created_at));
+ return usable.map(f=>{running+=Number(f.amount);return {...f,running}});
+}
+function renderAll(){renderDashboard();renderCashFlow();renderAccounts();renderDebts();renderHousehold()}
+function renderDashboard(){
+ const cash=getCurrentCash(), pr=projectedRows(), firstNeg=pr.find(r=>r.running<0), low=pr.length?Math.min(cash,...pr.map(r=>r.running)):cash;
+ const activeFlows=flows.filter(f=>visibleMine(f)&&['planned','pending'].includes(f.status)&&f.flow_date>=today());
+ const incoming=activeFlows.filter(f=>Number(f.amount)>0).reduce((s,f)=>s+Number(f.amount),0), outgoing=Math.abs(activeFlows.filter(f=>Number(f.amount)<0).reduce((s,f)=>s+Number(f.amount),0));
+ const debtTotal=debts.filter(d=>visibleMine(d)&&d.status==='active').reduce((s,d)=>s+Number(d.balance),0);
+ const d14=new Date();d14.setDate(d14.getDate()+14); const d14s=d14.toISOString().slice(0,10); const next14=Math.abs(activeFlows.filter(f=>f.flow_date<=d14s&&Number(f.amount)<0).reduce((s,f)=>s+Number(f.amount),0));
+ $('#heroCash').textContent=money(cash);$('#heroNegative').textContent=firstNeg?`${shortDate(firstNeg.flow_date)} · ${money(firstNeg.running)}`:'No negative day';$('#heroNegative').className=firstNeg?'bad':'good';$('#heroLow').textContent=money(low);$('#heroLow').className=low<0?'bad':low<100?'warn':'good';
+ $('#metricIn').textContent=money(incoming);$('#metricOut').textContent=money(outgoing);$('#metricDebt').textContent=money(debtTotal);$('#metric14').textContent=money(next14);
+ const next=pr.slice(0,5);$('#dashFlow').innerHTML=next.length?next.map(flowRowHTML).join(''):'<div class="empty">Nothing scheduled.</div>';bindFlowClicks($('#dashFlow'));
+ if(firstNeg){$('#dangerBox').classList.remove('hidden');$('#dangerBox').innerHTML=`<strong>${shortDate(firstNeg.flow_date)}</strong> is the first projected negative day at <strong>${money(firstNeg.running)}</strong>.`;}else $('#dangerBox').classList.add('hidden');
+}
+function flowRowHTML(r){const neg=r.running<0;return `<div class="row ${neg?'negativeRow':''}" data-flow="${r.id}"><div class="date">${shortDate(r.flow_date)}</div><div><div class="rlabel">${esc(r.label)}</div>${view==='household'?`<div class="sub">${esc(ownerName(r.owner_user_id))}</div>`:''}</div><div class="amount ${Number(r.amount)>=0?'good':'bad'}">${Number(r.amount)>=0?'+':''}${money(r.amount)}</div><div class="running ${neg?'bad':''}">${money(r.running)}</div></div>`}
+function renderCashFlow(){
+ const cash=getCurrentCash(), pr=projectedRows(), active=flows.filter(f=>visibleMine(f)&&['planned','pending'].includes(f.status)&&f.flow_date>=today()), watch=flows.filter(f=>visibleMine(f)&&f.status==='watch');
+ const incoming=active.filter(f=>Number(f.amount)>0).reduce((s,f)=>s+Number(f.amount),0), outgoing=Math.abs(active.filter(f=>Number(f.amount)<0).reduce((s,f)=>s+Number(f.amount),0));
+ $('#cashSummary').innerHTML=`<div class="card"><div class="label">Start</div><div class="value">${money(cash)}</div></div><div class="card"><div class="label">Coming In</div><div class="value good">${money(incoming)}</div></div><div class="card"><div class="label">Going Out</div><div class="value bad">${money(outgoing)}</div></div><div class="card"><div class="label">End</div><div class="value ${(cash+incoming-outgoing)<0?'bad':''}">${money(cash+incoming-outgoing)}</div></div>`;
+ let html=pr.map(flowRowHTML).join(''); if(watch.length){html+=`<div style="padding:10px 14px;background:#0a1523;color:var(--muted);font-size:12px;font-weight:800">WATCH — NOT COUNTED</div>`+watch.map(w=>`<div class="row" data-flow="${w.id}"><div class="date">Watch</div><div><div class="rlabel">${esc(w.label)}</div></div><div class="amount muted">${money(w.amount)}</div><div class="running muted">—</div></div>`).join('')}
+ $('#cashRows').innerHTML=html||'<div class="empty">Add the next bill or paycheck.</div>';bindFlowClicks($('#cashRows'));
+}
+function renderAccounts(){
+ const rows=accounts.filter(visibleMine);$('#accountRows').innerHTML=rows.length?rows.map(a=>`<div class="account" data-account="${a.id}"><div><div class="aname">${esc(a.name)}</div><div class="atype">${esc(a.account_type)}${view==='household'?' · '+esc(ownerName(a.owner_user_id)):''}${a.visibility==='private'?' · Private':''}</div></div><div class="abalance">${money(a.balance)}</div></div>`).join(''):'<div class="empty">No accounts yet.</div>';$$('[data-account]').forEach(e=>e.onclick=()=>openAccount(accounts.find(a=>a.id===e.dataset.account)));
+}
+function renderDebts(){
+ const rows=debts.filter(d=>visibleMine(d)&&d.status==='active');$('#debtRows').innerHTML=rows.length?rows.map(d=>`<div class="debt" data-debt="${d.id}"><div class="debtTop"><div><div class="debtname">${esc(d.name)}</div>${view==='household'?`<div class="sub">${esc(ownerName(d.owner_user_id))}</div>`:''}</div><div class="debtbal">${money(d.balance)}</div></div><div class="debtmeta"><span>${d.apr!=null?Number(d.apr).toFixed(2)+'% APR':'APR —'}</span><span>Min ${d.minimum_payment!=null?money(d.minimum_payment):'—'}</span><span>${d.next_due_date?'Due '+shortDate(d.next_due_date):'No due date'}</span></div></div>`).join(''):'<div class="empty">No debt here.</div>';$$('[data-debt]').forEach(e=>e.onclick=()=>openDebt(debts.find(d=>d.id===e.dataset.debt)));
+}
+function renderHousehold(){
+ $('#joinCodeDisplay').textContent=household?.join_code||'--------';$('#memberRows').innerHTML=members.map(m=>`<div class="member"><div><strong>${esc(m.display_name)}</strong><div class="sub">${m.user_id===session.user.id?'This device':'Household member'}</div></div><span class="pill">${m.role}</span></div>`).join('');
+}
+function bindFlowClicks(root){root.querySelectorAll('[data-flow]').forEach(e=>e.onclick=()=>openFlow(flows.find(f=>f.id===e.dataset.flow)))}
+function esc(s=''){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function showPage(id){currentPage=id;$$('.page').forEach(p=>p.classList.toggle('active',p.id===id));$$('.navbtn').forEach(b=>b.classList.toggle('active',b.dataset.page===id));$('#fab').style.display=['cashflow','accounts','debts'].includes(id)?'block':'none'}
+$$('[data-page]').forEach(b=>b.onclick=()=>showPage(b.dataset.page));$('#fab').onclick=()=>currentPage==='accounts'?openAccount():currentPage==='debts'?openDebt():openFlow();
+function modal(title,body){$('#modalTitle').textContent=title;$('#modalBody').innerHTML=body;$('#modalBack').classList.remove('hidden')}
+function closeModal(){$('#modalBack').classList.add('hidden')} $('#modalClose').onclick=closeModal;$('#modalBack').onclick=e=>{if(e.target===$('#modalBack'))closeModal()}
+function option(v,l,sel){return `<option value="${v}" ${sel===v?'selected':''}>${l}</option>`}
+function openFlow(f=null){
+ const isEdit=!!f; const amount=f?Math.abs(Number(f.amount)):''; const type=f?.flow_type||'expense';
+ modal(isEdit?'Edit Cash Flow':'Add Cash Flow',`<div class="formgrid"><div class="field"><label>Date</label><input id="fDate" type="date" class="input" value="${f?.flow_date||today()}"></div><div class="field"><label>Type</label><select id="fType" class="input">${option('expense','Going Out',type)}${option('income','Coming In',type)}${option('advance','Advance',type)}${option('refund','Refund',type)}</select></div><div class="field full"><label>Name</label><input id="fLabel" class="input" value="${esc(f?.label||'')}"></div><div class="field"><label>Amount</label><input id="fAmount" type="number" step="0.01" class="input" value="${amount}"></div><div class="field"><label>Status</label><select id="fStatus" class="input">${option('planned','Planned',f?.status||'planned')}${option('pending','Pending',f?.status)}${option('cleared','Cleared',f?.status)}${option('watch','Watch / Don’t Count',f?.status)}${option('skipped','Skipped',f?.status)}</select></div><div class="field full"><label>Visibility</label><select id="fVis" class="input">${option('shared','Household',f?.visibility||'shared')}${option('private','Private to me',f?.visibility)}</select></div></div><div class="actions">${isEdit?'<button id="deleteFlow" class="danger">Delete</button>':''}<button id="saveFlow" class="primary">Save</button></div>`);
+ $('#saveFlow').onclick=async()=>{const t=$('#fType').value;let amt=Math.abs(Number($('#fAmount').value||0));if(t==='expense')amt=-amt; const payload={household_id:household.id,owner_user_id:f?.owner_user_id||session.user.id,flow_date:$('#fDate').value,label:$('#fLabel').value.trim(),amount:amt,flow_type:t,status:$('#fStatus').value,visibility:$('#fVis').value}; const res=isEdit?await sb.from('money_cashflow').update(payload).eq('id',f.id):await sb.from('money_cashflow').insert(payload);if(res.error)return toast(errMsg(res.error));closeModal();await loadAll();};
+ if(isEdit)$('#deleteFlow').onclick=async()=>{if(!confirm('Delete this item?'))return;const r=await sb.from('money_cashflow').delete().eq('id',f.id);if(r.error)return toast(errMsg(r.error));closeModal();await loadAll()}
+}
+function openAccount(a=null){
+ const isEdit=!!a;modal(isEdit?'Edit Account':'Add Account',`<div class="formgrid"><div class="field full"><label>Name</label><input id="aName" class="input" value="${esc(a?.name||'')}"></div><div class="field"><label>Type</label><select id="aType" class="input">${['checking','savings','cash','other'].map(x=>option(x,x[0].toUpperCase()+x.slice(1),a?.account_type||'checking')).join('')}</select></div><div class="field"><label>Current Balance</label><input id="aBal" class="input" type="number" step="0.01" value="${a?.balance??''}"></div><div class="field"><label>Counts as Cash</label><select id="aCash" class="input">${option('yes','Yes',a?.included_in_cash===false?'no':'yes')}${option('no','No',a?.included_in_cash===false?'no':'yes')}</select></div><div class="field"><label>Visibility</label><select id="aVis" class="input">${option('shared','Household',a?.visibility||'shared')}${option('private','Private to me',a?.visibility)}</select></div></div><div class="actions">${isEdit?'<button id="deleteAccount" class="danger">Delete</button>':''}<button id="saveAccount" class="primary">Save</button></div>`);
+ $('#saveAccount').onclick=async()=>{const payload={household_id:household.id,owner_user_id:a?.owner_user_id||session.user.id,name:$('#aName').value.trim(),account_type:$('#aType').value,balance:Number($('#aBal').value||0),included_in_cash:$('#aCash').value==='yes',visibility:$('#aVis').value};const r=isEdit?await sb.from('money_accounts').update(payload).eq('id',a.id):await sb.from('money_accounts').insert(payload);if(r.error)return toast(errMsg(r.error));closeModal();await loadAll()}; if(isEdit)$('#deleteAccount').onclick=async()=>{if(!confirm('Delete account?'))return;const r=await sb.from('money_accounts').delete().eq('id',a.id);if(r.error)return toast(errMsg(r.error));closeModal();await loadAll()}
+}
+function openDebt(d=null){
+ const isEdit=!!d;modal(isEdit?'Edit Debt':'Add Debt',`<div class="formgrid"><div class="field full"><label>Name</label><input id="dName" class="input" value="${esc(d?.name||'')}"></div><div class="field"><label>Balance</label><input id="dBal" class="input" type="number" step="0.01" value="${d?.balance??''}"></div><div class="field"><label>APR %</label><input id="dApr" class="input" type="number" step="0.01" value="${d?.apr??''}"></div><div class="field"><label>Minimum</label><input id="dMin" class="input" type="number" step="0.01" value="${d?.minimum_payment??''}"></div><div class="field"><label>Next Due</label><input id="dDue" class="input" type="date" value="${d?.next_due_date||''}"></div><div class="field"><label>Type</label><select id="dType" class="input">${['credit_card','installment','loan','other'].map(x=>option(x,x.replace('_',' '),d?.debt_type||'credit_card')).join('')}</select></div><div class="field"><label>Visibility</label><select id="dVis" class="input">${option('shared','Household',d?.visibility||'shared')}${option('private','Private to me',d?.visibility)}</select></div></div><div class="actions">${isEdit?'<button id="deleteDebt" class="danger">Delete</button>':''}<button id="saveDebt" class="primary">Save</button></div>`);
+ $('#saveDebt').onclick=async()=>{const payload={household_id:household.id,owner_user_id:d?.owner_user_id||session.user.id,name:$('#dName').value.trim(),balance:Number($('#dBal').value||0),apr:$('#dApr').value===''?null:Number($('#dApr').value),minimum_payment:$('#dMin').value===''?null:Number($('#dMin').value),next_due_date:$('#dDue').value||null,debt_type:$('#dType').value,visibility:$('#dVis').value,status:'active'};const r=isEdit?await sb.from('money_debts').update(payload).eq('id',d.id):await sb.from('money_debts').insert(payload);if(r.error)return toast(errMsg(r.error));closeModal();await loadAll()}; if(isEdit)$('#deleteDebt').onclick=async()=>{if(!confirm('Delete debt?'))return;const r=await sb.from('money_debts').delete().eq('id',d.id);if(r.error)return toast(errMsg(r.error));closeModal();await loadAll()}
+}
+$('#addFlow').onclick=()=>openFlow();$('#addAccount').onclick=()=>openAccount();$('#addDebt').onclick=()=>openDebt();$('#refreshBtn').onclick=loadAll;
+$('#logoutBtn').onclick=$('#onboardLogout').onclick=async()=>{await sb.auth.signOut();showAuth()};
+$('#signinTab').onclick=()=>{signupMode=false;$('#signinTab').classList.add('active');$('#signupTab').classList.remove('active');$('#authSubmit').textContent='Sign In'};
+$('#signupTab').onclick=()=>{signupMode=true;$('#signupTab').classList.add('active');$('#signinTab').classList.remove('active');$('#authSubmit').textContent='Create Account'};
+$('#authSubmit').onclick=async()=>{const email=$('#authEmail').value.trim(),password=$('#authPassword').value;$('#authMsg').textContent='';if(!email||password.length<6){$('#authMsg').textContent='Enter an email and a password of at least 6 characters.';return}let res;if(signupMode)res=await sb.auth.signUp({email,password});else res=await sb.auth.signInWithPassword({email,password});if(res.error){$('#authMsg').textContent=errMsg(res.error);return}if(signupMode&&!res.data.session){$('#authMsg').textContent='Check your email to confirm the account, then come back and sign in.';return}session=res.data.session;await resolveHousehold()};
+$('#seedStart').onclick=async()=>{let r=await sb.rpc('money_bootstrap_household',{display_name_input:'Thomas',household_name_input:'Thomas + Lara'});if(r.error){$('#onboardMsg').textContent=errMsg(r.error);return}r=await sb.rpc('money_seed_thomas_current');if(r.error){$('#onboardMsg').textContent=errMsg(r.error);return}await resolveHousehold()};
+$('#blankStart').onclick=async()=>{const name=$('#blankName').value.trim()||'Member';const r=await sb.rpc('money_bootstrap_household',{display_name_input:name,household_name_input:`${name}'s Money`});if(r.error){$('#onboardMsg').textContent=errMsg(r.error);return}await resolveHousehold()};
+$('#joinBtn').onclick=async()=>{const r=await sb.rpc('money_join_household',{join_code_input:$('#joinCode').value,display_name_input:$('#joinName').value});if(r.error){$('#onboardMsg').textContent=errMsg(r.error);return}await resolveHousehold()};
+sb.auth.onAuthStateChange((_e,s)=>{session=s;if(!s)showAuth()});
+showPage('dashboard');init();
+</script>
+</body>
+</html>
